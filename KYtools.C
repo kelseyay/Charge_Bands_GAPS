@@ -358,3 +358,77 @@ double RateScale_TOA(TChain*TreeSimulationParameter, int MainLoopScaleFactor, do
 
     return RateScale;
 }
+
+//Function for the LG standard event cuts that Kaliroe uses
+bool LG_std_event_selection_cuts(const CEventRec* Event){
+    vector<int> lg_hits = {};
+    bool TofTriggerSingleTrack = false;
+
+    //single track
+    int UmbCtrLowCut = 1;
+    int CubeCtrLowCut = 1;
+
+    //antinucleus trigger
+    int UmbCtrHighCut = 3;
+    int CubeCtrHighCut = 3;
+
+    int UmbCtr = 0;
+    int CubeTopCtr = 0;
+    int CubeBottomCtr = 0;
+    int UmbCenter = 0;
+    int CorCtr = 0;
+    int CubeSides = 0;
+    int UmbSides = 0;
+
+    for(unsigned int k = 0; k < Event->GetTriggerVolumeId().size(); k++){
+
+        unsigned int VolumeId = Event->GetTriggerVolumeId().at(k);
+        lg_hits.push_back(VolumeId);
+        if(volspec(VolumeId,0,3) == 100) UmbCtr++;
+        if(volspec(VolumeId,0,3) == 110) CubeTopCtr++;
+        if(volspec(VolumeId,0,3) == 111) CubeBottomCtr++;
+        if(volspec(VolumeId,0,4) == 1000) UmbCenter++;
+        if(volspec(VolumeId,0,3) == 112) CubeSides++;
+        if(volspec(VolumeId,0,3) == 113) CubeSides++;
+        if(volspec(VolumeId,0,3) == 114) CubeSides++;
+        if(volspec(VolumeId,0,3) == 115) CubeSides++;
+        if(volspec(VolumeId,0,3) == 102) CorCtr++;
+        if(volspec(VolumeId,0,3) == 103) CorCtr++;
+        if(volspec(VolumeId,0,3) == 104) CorCtr++;
+        if(volspec(VolumeId,0,3) == 105) CorCtr++;
+        if(volspec(VolumeId,0,3) == 100 && volspec(VolumeId,0,4) != 1000) UmbSides++;
+
+    }
+
+    if(UmbCtr >= UmbCtrLowCut && UmbCtr < UmbCtrHighCut
+        && CubeTopCtr >= CubeCtrLowCut && CubeTopCtr < CubeCtrHighCut
+        && CubeBottomCtr >= CubeCtrLowCut && CubeBottomCtr < CubeCtrHighCut
+        && CorCtr == 0 && CubeSides == 0)
+    {
+        bool doubleokayumb = true;
+        bool doubleokaycbt = true;
+        bool doubleokaycbb = true;
+        if(UmbCtr == 2){
+                doubleokayumb = false;
+                vector<int> umb_vol_ids = {};
+                for(unsigned int k = 0; k < lg_hits.size();k++) if(volspec(lg_hits[k],0,3) == 100)umb_vol_ids.push_back(lg_hits[k]);
+                if(umb_vol_ids[0] == (umb_vol_ids[1] + 1) || umb_vol_ids[0] == (umb_vol_ids[1] - 1)) doubleokayumb = true;
+        }
+        if(CubeTopCtr == 2){
+                doubleokaycbt = false;
+                vector<int> umb_vol_ids = {};
+                for(unsigned int k = 0; k < lg_hits.size();k++) if(volspec(lg_hits[k],0,3) == 110)umb_vol_ids.push_back(lg_hits[k]);
+                if(umb_vol_ids[0] == (umb_vol_ids[1] + 1) || umb_vol_ids[0] == (umb_vol_ids[1] - 1)) doubleokaycbt = true;
+        }
+        if(CubeBottomCtr == 2){
+                doubleokaycbb = false;
+                vector<int> umb_vol_ids = {};
+                for(unsigned int k = 0; k < lg_hits.size();k++) if(volspec(lg_hits[k],0,3) == 111)umb_vol_ids.push_back(lg_hits[k]);
+                if(umb_vol_ids[0] == (umb_vol_ids[1] + 1) || umb_vol_ids[0] == (umb_vol_ids[1] - 1)) doubleokaycbb = true;
+        }
+        if(doubleokayumb && doubleokaycbt && doubleokaycbb)TofTriggerSingleTrack = true;
+    }
+
+    if(TofTriggerSingleTrack){return true;}else{return false;}
+
+}

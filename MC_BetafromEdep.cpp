@@ -56,9 +56,7 @@ float solvermin_tof = ZOne_TOF(0.95);
 TF1 *Z1_tkr_Solve = new TF1("Z1_tkr_Solve", [](double *x, double *p){ return ZOne_TKR(x[0]); }, 0.01, 0.95, 0);
 TF1 *Z1_tof_Solve = new TF1("Z1_tof_Solve", [](double *x, double *p){ return ZOne_TOF(x[0]); }, 0.01, 0.95, 0);
 
-//Example:
-//TGraph * g = new TGraph(npointx, xvec, yvec);
-//TF1 * f = new TF1("f",[&](double*x, double *p){ return p[0]*g->Eval(x[0]); }, xmin, xmax, 1);
+
 
 int main(int argc, char *argv[]){
 
@@ -127,10 +125,8 @@ TreeMC->Add(FilenameRoot);
 
 //auto tkr_edep_beta_z1 = new TF1("tkr_edep_beta_z1","OneZ_TKR(x)",0.01,0.95);
 
-//int MainLoopScaleFactor = 1; //Set this number to scale the step size. Larger means runs faster and fewer events
 double TofCutLow = 0.1; //No low Tof cut right now
 double TrackerCut = 0.4; //Threshold for an energy deposition to be considered a hit
-int NHitsmin = 3;
 
 double coshigh = 0.54; //0.995; //0.92 //0.54 is the highest angle that can hit UMB, CBEtop, CBEbot
 double coslow = 1; //0.62 //0.8
@@ -161,11 +157,12 @@ TH1F * HBetaGen_Weight_noTOFcuts = new TH1F("HBetaGen_Weight_noTOFcuts","HBetaGe
 TH1F * HBetaGen_Weight = new TH1F("HBetaGen_Weight","HBetaGen_Weight",40, betacut, betahigh);
 TH1F * HBetaProxy_Weight = new TH1F("HBetaProxy_Weight","HBetaProx_Weight",40, betacut, betahigh);
 TH1F * HBetaRec_Weight = new TH1F("HBetaRec_Weight","HBetaRec_Weight",40, betacut, betahigh);
+TH2D * HRecB_vs_GenB_Weight = new TH2D("HRecB_vs_GenB_Weight","Rec_Beta vs Gen_Beta_Weight",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 1);
+TH2D * HProxB_vs_GenB_Weight = new TH2D("HProxB_vs_GenB_Weight","Prox_B vs Gen_Beta_Weight",50, betacut - 0.1, betahigh + 0.1, 50, 0.1, 1);
+TH2D * HRecB_vs_ProxB_Weight = new TH2D("HRecB_vs_ProxB_Weight","Rec_Beta vs Prox_B_Weight",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 1);
+
+
 float bcounts_Weight = 0;
-
-//TH2D * HRecB_vs_GenB_Weight = new TH2D("HRecB_vs_GenB_Weight","Rec_Beta * Tr_Mean vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 1);
-//TH2D * HProxB_vs_GenB_Weight = new TH2D("HProxB_vs_GenB_Weight","Prox_B vs Gen_Beta",50, betacut - 0.1, betahigh + 0.1, 50, 0.1, 1);
-
 
 //How many entries:
 cout << "Total Number of events / Mainscale Factor = " << TreeRec->GetEntries()/MainLoopScaleFactor << endl;
@@ -226,8 +223,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 		    cout << "Event number " << i << endl;
 	}
 
-	//Cuts are implemented in this chunk:
-	//if(Event->GetNTracks() == 1){  //First select the single track event
+	if(Event->GetNTracks() == 1){  //First select the single track event
 		bool Umbflag = 0;
 		bool CBEtopflag = 0;
 		bool CBEbotflag = 0;
@@ -257,6 +253,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
                 if(MCEvent->GetTrack(0)->GetPdg() == 1000020040) {FluxScaleFactor = 1;  RateScale = RateScale_TOA(TreeSimulationParameter, MainLoopScaleFactor, StartingPlaneAcceptance, BinWidthFactor, HPrimaryBeta, CosZenithCut, GAlphaTotalFluxUnscaled, FluxScaleFactor, Event);}
                 //cout << "BGen = " << Bgen << " Cos(theta) = " << Event->GetPrimaryMomentumDirectionGenerated().CosTheta() << " RateScale = " << RateScale << endl;
             }
+            //cout << "Ratescale = " << RateScale << endl;
             HBetaGen_Weight_noTOFcuts->Fill(MCEvent->GetPrimaryBeta(),RateScale);
 
 			for(uint isig=0; isig<Event->GetPrimaryTrack()->GetEnergyDeposition().size(); isig++){
@@ -374,9 +371,13 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 
                             if(MC_Weight){
                                 bcounts_Weight = bcounts_Weight+RateScale;
+                                //cout << "Is this working? " << bcounts_Weight << endl;
                                 HBetaGen_Weight->Fill(Event->GetPrimaryBetaGenerated(),RateScale);
                                 HBetaProxy_Weight->Fill(TrBP,RateScale);
                                 HBetaRec_Weight->Fill(Event->GetPrimaryBeta(),RateScale);
+                                HRecB_vs_GenB_Weight->Fill(Event->GetPrimaryBetaGenerated(),Event->GetPrimaryBeta(),RateScale);
+                                HProxB_vs_GenB_Weight->Fill(Event->GetPrimaryBetaGenerated(),TrBP,RateScale);
+                                HRecB_vs_ProxB_Weight->Fill(Event->GetPrimaryBeta(),TrBP,RateScale);
                             }
 
                         }
@@ -391,13 +392,18 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 
 		} //Closed bracket for event level cut (beta, cos, pt exists)
 
-	//} //Closed bracket for single track cut
+	} //Closed bracket for single track cut
 
 }  //Closed bracket for iteration through tree events, move on to the next event i
 
 histplot2d("c1",HRecB_vs_GenB,"Rec_B versus Gen_B","Generated Beta", "Reconstructed Beta","NEntries", out_path + "GenBRec" + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) );
 histplot2d("c2",HProxB_vs_GenB,"Prox_B versus Gen_B","Generated Beta", "Proxy Beta","NEntries", out_path + "GenBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
 histplot2d("c2_5",HRecB_vs_ProxB,"Prox_B versus Rec_B","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+
+histplot2d("c1_w",HRecB_vs_GenB_Weight,"Rec_B versus Gen_B Weighted","Generated Beta", "Reconstructed Beta","NEntries", out_path + "Weighted_GenBRec" + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) );
+histplot2d("c2_w",HProxB_vs_GenB_Weight,"Prox_B versus Gen_B Weighted","Generated Beta", "Proxy Beta","NEntries", out_path + "Weighted_GenBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot2d("c2_5_w",HRecB_vs_ProxB_Weight,"Prox_B versus Rec_B Weighted","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "Weighted_RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+
 
 
 HBetaRec->SetMaximum(HBetaRec->GetEntries());
@@ -443,28 +449,3 @@ cout << endl << "I am done" << endl;
 return 1;
 
 }
-
-
-
-/*
-//Theoretically save on compute time if put weighting stuff at last possible place.
-double AcceptanceScale;
-if (TreeSimulationParameter != nullptr){
-    //acceptance scaling factor based on beta of the primary
-    AcceptanceScale = MainLoopScaleFactor*StartingPlaneAcceptance/(BinWidthFactor*HPrimaryBeta->GetBinContent(HPrimaryBeta->FindBin(Event->GetPrimaryBetaGenerated())));
-
-    if(HPrimaryBeta->GetBinContent(HPrimaryBeta->FindBin(Event->GetPrimaryBetaGenerated())) == 0) AcceptanceScale = 0;
-    //Find the bin associated with the generated beta in the vector, see if it doesn't exist?
-}else AcceptanceScale = 1; //Set it = to 1 if there's a nullptr? That's a surprise...
-//cout << "AcceptanceScale = " << AcceptanceScale << endl;
-
-int AngularRegion = -1;
-for(unsigned int a = 0; a < CosZenithCut.size(); a++) if(Event->GetPrimaryMomentumDirectionGenerated().CosTheta() < CosZenithCut.at(a).first && Event->GetPrimaryMomentumDirectionGenerated().CosTheta() > CosZenithCut.at(a).second) AngularRegion = a;
-//This is just checking which "bin" the generated cos(theta) is in
-if(AngularRegion < 0) continue; //Don't bother if angular region wasn't found
-RateScale = FluxScaleFactor*AcceptanceScale*GMuonTotalFluxUnscaled.at(AngularRegion)->Eval(Event->GetPrimaryBetaGenerated());
-//cout << "Beta? = " << Event->GetPrimaryBetaGenerated() << endl;
-//cout << "Angle? = " << Event->GetPrimaryMomentumDirectionGenerated().CosTheta() << endl;
-cout << "RateScale?? = " << RateScale << endl;
-cout << "RateScale from KYTools = " << RateScale_muon(TreeSimulationParameter, MainLoopScaleFactor, StartingPlaneAcceptance, BinWidthFactor, HPrimaryBeta, CosZenithCut, GMuonTotalFluxUnscaled, FluxScaleFactor, Event) << endl;
-*/

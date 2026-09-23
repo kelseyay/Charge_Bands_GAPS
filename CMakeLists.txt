@@ -34,3 +34,7 @@ set(LIB_DIRS ${ROOT_LIBRARIES}
 add_executable(MCEdepBeta MC_BetafromEdep.cpp)
 target_include_directories(MCEdepBeta PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
 target_link_libraries(MCEdepBeta ${LIB_DIRS})
+
+add_executable(RecEdepBeta Rec_BetafromEdep.cpp)
+target_include_directories(RecEdepBeta PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(RecEdepBeta ${LIB_DIRS})
