@@ -223,19 +223,17 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 		    cout << "Event number " << i << endl;
 	}
 
-	if(Event->GetNTracks() == 1){  //First select the single track event
-		bool Umbflag = 0;
-		bool CBEtopflag = 0;
-		bool CBEbotflag = 0;
-		bool TKRflag = 0;
-		int Layer_Hits_Tracker[7] = {}; //Seven layers
+    if(std_Rec_event_cuts(Event) &&  fabs(MCEvent->GetPrimaryBeta()) > betacut && fabs(MCEvent->GetPrimaryBeta()) <  betahigh ){
+        int Outer_TOF_flag[7] = {}; //TOF top = 0, bot = 1, +X = 2, -X = 3, +Y = 4, -Y = 5. 1 or 3 PPs is 6
+        int Inner_TOF_flag[7] = {}; //TOF top = 0, bot = 1, +X = 2, -X = 3, +Y = 4, -Y = 5. 1 or 3 PPs is 6
+        int TKRflag = 0;
+        int Layer_Hits_Tracker[7] = {}; //Seven layers
+        vector<int> tof_hg_hits = {};
 
 		CTrackRec* pt = Event->GetPrimaryTrack();
 		uint pt_index = 0;
-      	        for( ; pt_index < Event->GetNTracks(); pt_index++) if( Event->GetTrack(pt_index)->IsPrimary() ) break;
+        for( ; pt_index < Event->GetNTracks(); pt_index++) if( Event->GetTrack(pt_index)->IsPrimary() ) break;
 
-		//Note downwards beta enforced by Event->GetPrimaryBeta() (should be positive) multiplied by Event->GetPrimaryMomentumDirection()[2] (z trajectory of particle)
-		if( pt != nullptr && ( (TRG == 0) || ((int)Event->GetTriggerSources().at(0) == TRG) ) && pt->GetChi2()/pt->GetNdof() < 3.2 && -fabs(Event->GetPrimaryMomentumDirection().CosTheta()) > -coslow && -fabs(Event->GetPrimaryMomentumDirection().CosTheta()) < -coshigh && Event->GetPrimaryBeta()*Event->GetPrimaryMomentumDirection()[2] < 0 && fabs(MCEvent->GetPrimaryBeta()) > betacut && fabs(MCEvent->GetPrimaryBeta()) <  betahigh ){
 			//-----------EVENT LEVEL CUT APPLIED
 
 			//cout << "Event: " << i << endl;
@@ -256,21 +254,10 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
             //cout << "Ratescale = " << RateScale << endl;
             HBetaGen_Weight_noTOFcuts->Fill(MCEvent->GetPrimaryBeta(),RateScale);
 
-			for(uint isig=0; isig<Event->GetPrimaryTrack()->GetEnergyDeposition().size(); isig++){
-                unsigned int VolumeId  = Event->GetPrimaryTrack()->GetVolumeId(isig); //Check the VolumeId of the event
-                if(volspec(VolumeId,0,2) == 20 && Event->GetPrimaryTrack()->GetEnergyDeposition(isig) > TrackerCut){
-                    int layer = GGeometryObject::GetTrackerLayer(VolumeId);
-                    Layer_Hits_Tracker[layer]++;
-                    TKRflag = 1;
-                }
-                if(volspec(VolumeId,0,3) == 100 && Event->GetPrimaryTrack()->GetEnergyDeposition(isig) > TofCutLow){ Umbflag = 1; } // cout << "UMB hit!" <<endl ;
-                if(volspec(VolumeId,0,3) == 110 && Event->GetPrimaryTrack()->GetEnergyDeposition(isig) > TofCutLow) { CBEtopflag = 1; }// cout << "CBE top hit!" << endl;
-                if(volspec(VolumeId,0,3) == 111 && Event->GetPrimaryTrack()->GetEnergyDeposition(isig) > TofCutLow) { CBEbotflag = 1; }// cout << "CBE bot hit!" << endl;
-			}
+            tof_flags(Event, tof_hg_hits, Outer_TOF_flag, Inner_TOF_flag, Layer_Hits_Tracker, TKRflag );
 
-			//Do we want to only run this on certain tracks? Yeah probably. Can remove the TOF flags. Just run on whatever lol.
-			if(Umbflag && CBEtopflag && (CBEbotflag || TKRflag)){ //Guarantees 3 hit requirement, if the energy deposition is lower than the solver minimum, don't use. Still try to calculate.
-			    if(print) cout << endl << "Event is " << i << endl;
+            if( (Outer_TOF_flag[0] > 0 && Inner_TOF_flag[0] > 0)  && Inner_TOF_flag[1] > 0 && !Inner_TOF_flag[2] > 0 && !Inner_TOF_flag[3] > 0 && !Inner_TOF_flag[4] > 0 && !Inner_TOF_flag[5] > 0 && !Inner_TOF_flag[6] > 0 && !Outer_TOF_flag[2] > 0 && !Outer_TOF_flag[3] > 0 && !Outer_TOF_flag[4] > 0 && !Outer_TOF_flag[5] > 0 && !Outer_TOF_flag[6] > 0 ){ //If UMB and CBE top and CBE bot and NOTHING ELSE
+			    if(print) cout << endl << "Event is very passing! " << i << endl;
 				if(print) cout << "Zenith angle is " << Event->GetPrimaryMomentumDirection().CosTheta() << endl;
 			    if(print) cout << "Bgen is " << Bgen << endl;
 				if(print) cout << "Breco is " << Event->GetPrimaryBeta() << endl;
@@ -334,7 +321,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 				    }
 				} //Closed bracket for iteration over isig with TOF cuts
 
-				if(Beta_Proxy.size() > 2){
+				if(Beta_Proxy.size() > 1){
 				    std::sort(Beta_Proxy.begin(), Beta_Proxy.end(),std::greater<>());
 
                         //for(unsigned int isig = 0; isig < double(Beta_Proxy.size()); isig++){
@@ -392,8 +379,6 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 
 		} //Closed bracket for event level cut (beta, cos, pt exists)
 
-	} //Closed bracket for single track cut
-
 }  //Closed bracket for iteration through tree events, move on to the next event i
 
 histplot2d("c1",HRecB_vs_GenB,"Rec_B versus Gen_B","Generated Beta", "Reconstructed Beta","NEntries", out_path + "GenBRec" + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) );
@@ -403,8 +388,6 @@ histplot2d("c2_5",HRecB_vs_ProxB,"Prox_B versus Rec_B","Reconstructed Beta", "Pr
 histplot2d("c1_w",HRecB_vs_GenB_Weight,"Rec_B versus Gen_B Weighted","Generated Beta", "Reconstructed Beta","NEntries", out_path + "Weighted_GenBRec" + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) );
 histplot2d("c2_w",HProxB_vs_GenB_Weight,"Prox_B versus Gen_B Weighted","Generated Beta", "Proxy Beta","NEntries", out_path + "Weighted_GenBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
 histplot2d("c2_5_w",HRecB_vs_ProxB_Weight,"Prox_B versus Rec_B Weighted","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "Weighted_RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
-
-
 
 HBetaRec->SetMaximum(HBetaRec->GetEntries());
 HBetaGen->SetMaximum(HBetaGen->GetEntries());

@@ -73,23 +73,6 @@ bool charge_cut_z2(double Proxy_Beta, double Reco_Beta){
     if(Reco_Beta > 0.75 && Proxy_Beta < 0.55){ return 1; }else if(Reco_Beta < 0.75 && Proxy_Beta <  0.78*Reco_Beta - 0.033){return 1;}else{return 0;}
 }
 
-bool std_Rec_event_cuts(const CEventRec* Event){
-    bool PassAllCuts = false;
-    if(Event->GetNTracks() == 1){  //First select the single track event
-    	CTrackRec* pt = Event->GetPrimaryTrack();
-    	uint pt_index = 0;
-   	    for( ; pt_index < Event->GetNTracks(); pt_index++) if( Event->GetTrack(pt_index)->IsPrimary() ) break;
-
-    	//Note downwards beta enforced by Event->GetPrimaryBeta() (should be positive) multiplied by Event->GetPrimaryMomentumDirection()[2] (z trajectory of particle)
-    	if( pt != nullptr && pt->GetChi2()/pt->GetNdof() < 3.2 && Event->GetPrimaryBeta()*Event->GetPrimaryMomentumDirection()[2] < 0){
-            PassAllCuts = true;
-    		//-----------EVENT LEVEL CUT APPLIED
-        } //End selecton cuts
-
-    } //Single Track cut
-     return PassAllCuts;
-}
-
 //Example:
 //TGraph * g = new TGraph(npointx, xvec, yvec);
 //TF1 * f = new TF1("f",[&](double*x, double *p){ return p[0]*g->Eval(x[0]); }, xmin, xmax, 1);
@@ -101,8 +84,8 @@ parser->AddProgramDescription("Minimal Reproducable Example for Extracing Data f
 parser->AddCommandLineOption<string>("in_path", "path to instrument data files", "./*", "i");
 parser->AddCommandLineOption<string>("out_file", "name of output root file", "", "o");
 parser->AddCommandLineOption<string>("end_name", "name at the end of pngs","","e");
-parser->AddCommandLineOption<double>("beta_low", "low Beta Cut",0.8,"l");
-parser->AddCommandLineOption<double>("beta_high", "upper Beta Cut",1,"u");
+parser->AddCommandLineOption<double>("beta_low", "low Beta Cut",0.2,"l");
+parser->AddCommandLineOption<double>("beta_high", "upper Beta Cut",1.2,"u");
 parser->AddCommandLineOption<double>("tkr_factor", "tkr factor",1,"k");
 parser->AddCommandLineOption<double>("tof_factor", "tof factor",1,"f");
 parser->AddCommandLineOption<bool>("TKR", "tkr use",1,"s");
@@ -197,37 +180,42 @@ TreeRec->GetEntry(0);
 cout << "Total Number of events / Mainscale Factor = " << TreeRec->GetEntries()/MainLoopScaleFactor << endl;
 
 //Using i to loop over every event in the tree
-//for(unsigned int i = 0; i < 10000; i+=MainLoopScaleFactor){
 for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
+//for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
     TreeRec->GetEntry(i);
 
     if( ((int)i % (int)ceil(TreeRec->GetEntries()/(MainLoopScaleFactor*10))) == 0){
 		    cout << "Event number " << i << endl;
 	}
 
-    if(LG_std_event_selection_cuts(Event)){
-        //cout << "This event passes LG cuts! " << i << endl;
+    vector<int> lg_hits = {};
+    bool TofTriggerSingleTrack = false;
+    cout << "Event is " << i << endl;
+
+    LG_std_event_selection_cuts(Event,lg_hits,TofTriggerSingleTrack);
+
+    cout << "Passed LG hits: " << endl;
+    for (int element : lg_hits) {
+        std::cout << element << " ";
+    }
+
+    if(TofTriggerSingleTrack){
+        cout << "This event passes LG cuts! " << i << endl;
 
         if(std_Rec_event_cuts(Event) &&  fabs(Event->GetPrimaryBeta()) > betacut && fabs(Event->GetPrimaryBeta()) <  betahigh && ( (TRG == 0) || ((int)Event->GetTriggerSources().at(0) == TRG) )){
             //cout << "Event passes the standard cuts! " << endl;
 
-            bool Outer_TOF_flag[7] = {}; //TOF top = 0, bot = 1, +X = 2, -X = 3, +Y = 4, -Y = 5. 1 or 3 PPs is 6
-     	    bool Inner_TOF_flag[7] = {}; //TOF top = 0, bot = 1, +X = 2, -X = 3, +Y = 4, -Y = 5. 1 or 3 PPs is 6
-  	        bool TKRflag = 0;
+            int Outer_TOF_flag[7] = {}; //TOF top = 0, bot = 1, +X = 2, -X = 3, +Y = 4, -Y = 5. 1 or 3 PPs is 6
+     	    int Inner_TOF_flag[7] = {}; //TOF top = 0, bot = 1, +X = 2, -X = 3, +Y = 4, -Y = 5. 1 or 3 PPs is 6
+  	        int TKRflag = 0;
   	        int Layer_Hits_Tracker[7] = {}; //Seven layers
+            vector<int> tof_hg_hits = {};
 
-    		for(uint isig=0; isig<Event->GetTrack(0)->GetEnergyDeposition().size(); isig++){
-                unsigned int VolumeId  = Event->GetTrack(0)->GetVolumeId(isig); //Check the VolumeId of the event
-                if(volspec(VolumeId,0,2) == 20 && Event->GetTrack(0)->GetEnergyDeposition(isig) > TrackerCut){
-                    int layer = GGeometryObject::GetTrackerLayer(VolumeId);
-                    Layer_Hits_Tracker[layer]++;
-                    TKRflag = 1;
-                }
-                if(volspec(VolumeId,0,2) == 10 && Event->GetTrack(0)->GetEnergyDeposition(isig) > TofCutLow){ Outer_TOF_flag[volspec(VolumeId,2,1)] = 1; }
-                if(volspec(VolumeId,0,2) == 11 && Event->GetTrack(0)->GetEnergyDeposition(isig) > TofCutLow){ Inner_TOF_flag[volspec(VolumeId,2,1)] = 1; }
-    		}
+            tof_flags(Event, tof_hg_hits, Outer_TOF_flag, Inner_TOF_flag, Layer_Hits_Tracker, TKRflag );
 
-            if( (Outer_TOF_flag[0] && Inner_TOF_flag[0])  && Inner_TOF_flag[1] && !Inner_TOF_flag[2] && !Inner_TOF_flag[3] && !Inner_TOF_flag[4] && !Inner_TOF_flag[5] && !Outer_TOF_flag[2] && !Outer_TOF_flag[3] && !Outer_TOF_flag[4] && !Outer_TOF_flag[5]  ){ //If UMB and CBE top and CBE bot and NOTHING ELSE
+            if( std::is_permutation(lg_hits.begin(), lg_hits.end(), tof_hg_hits.begin(), tof_hg_hits.end())  ){ //If UMB and CBE top and CBE bot and NOTHING ELSE
+
+
                     //cout << "Event also passes the TOF cuts!! " << endl;
                     if(print) cout << "This event also passes HG cuts! " << endl;
                     if(print) cout << endl << "Event is " << i << endl;
@@ -322,7 +310,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 
                 } //TOF Cuts
 
-    			} //Closed bracket for if statement for standard event selection cuts
+        } //Closed bracket for if statement for standard event selection cuts
 
     			//-----------EVENT LEVEL CUTS END
 

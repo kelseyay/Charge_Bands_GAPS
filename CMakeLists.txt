@@ -38,3 +38,15 @@ target_link_libraries(MCEdepBeta ${LIB_DIRS})
 add_executable(RecEdepBeta Rec_BetafromEdep.cpp)
 target_include_directories(RecEdepBeta PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
 target_link_libraries(RecEdepBeta ${LIB_DIRS})
+
+add_executable(Zedep3 ChargeMCEdep3.cpp)
+target_include_directories(Zedep3 PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(Zedep3 ${LIB_DIRS})
+
+add_executable(DZedep3 ChargeDataEdep3.cpp)
+target_include_directories(DZedep3 PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(DZedep3 ${LIB_DIRS})
+
+add_executable(SlimTrim SlimTrimSkimAttempt.cpp)
+target_include_directories(SlimTrim PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(SlimTrim ${LIB_DIRS})

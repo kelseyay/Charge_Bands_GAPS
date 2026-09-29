@@ -19,6 +19,7 @@ using namespace std;
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include "TTimeStamp.h"
 
 
@@ -50,6 +51,9 @@ using namespace Crane::Analysis;
 namespace ca = Crane::Analysis;
 namespace cl = Crane::Common;
 //using Crane::Calibration;
+
+double TrackerCut = 0.4;
+double TofCutLow = 0.1;
 
 //Function for rounding a double or float to some number of decimal points before making it a string.
 string roundstr_d(double value, int precision){
@@ -360,9 +364,9 @@ double RateScale_TOA(TChain*TreeSimulationParameter, int MainLoopScaleFactor, do
 }
 
 //Function for the LG standard event cuts that Kaliroe uses
-bool LG_std_event_selection_cuts(const CEventRec* Event){
-    vector<int> lg_hits = {};
-    bool TofTriggerSingleTrack = false;
+void LG_std_event_selection_cuts(const CEventRec* Event, vector<int>& lg_hits, bool& TofTriggerSingleTrack){
+    lg_hits = {};
+    TofTriggerSingleTrack = false;
 
     //single track
     int UmbCtrLowCut = 1;
@@ -383,6 +387,7 @@ bool LG_std_event_selection_cuts(const CEventRec* Event){
     for(unsigned int k = 0; k < Event->GetTriggerVolumeId().size(); k++){
 
         unsigned int VolumeId = Event->GetTriggerVolumeId().at(k);
+        //cout << "Volid is " << VolumeId << endl;
         lg_hits.push_back(VolumeId);
         if(volspec(VolumeId,0,3) == 100) UmbCtr++;
         if(volspec(VolumeId,0,3) == 110) CubeTopCtr++;
@@ -392,10 +397,12 @@ bool LG_std_event_selection_cuts(const CEventRec* Event){
         if(volspec(VolumeId,0,3) == 113) CubeSides++;
         if(volspec(VolumeId,0,3) == 114) CubeSides++;
         if(volspec(VolumeId,0,3) == 115) CubeSides++;
+        if(volspec(VolumeId,0,3) == 116) CubeSides++;
         if(volspec(VolumeId,0,3) == 102) CorCtr++;
         if(volspec(VolumeId,0,3) == 103) CorCtr++;
         if(volspec(VolumeId,0,3) == 104) CorCtr++;
         if(volspec(VolumeId,0,3) == 105) CorCtr++;
+        if(volspec(VolumeId,0,3) == 106) CorCtr++;
         if(volspec(VolumeId,0,3) == 100 && volspec(VolumeId,0,4) != 1000) UmbSides++;
 
     }
@@ -429,6 +436,39 @@ bool LG_std_event_selection_cuts(const CEventRec* Event){
         if(doubleokayumb && doubleokaycbt && doubleokaycbb)TofTriggerSingleTrack = true;
     }
 
-    if(TofTriggerSingleTrack){return true;}else{return false;}
+}
 
+
+
+//Function that applies the standard event selection cuts NO trigger and NO beta cuts though
+bool std_Rec_event_cuts(const CEventRec* Event){
+    bool PassAllCuts = false;
+    if(Event->GetNTracks() == 1){  //First select the single track event
+    	CTrackRec* pt = Event->GetPrimaryTrack();
+    	uint pt_index = 0;
+   	    for( ; pt_index < Event->GetNTracks(); pt_index++) if( Event->GetTrack(pt_index)->IsPrimary() ) break;
+
+    	//Note downwards beta enforced by Event->GetPrimaryBeta() (should be positive) multiplied by Event->GetPrimaryMomentumDirection()[2] (z trajectory of particle)
+    	if( pt != nullptr && pt->GetChi2()/pt->GetNdof() < 3.2 && Event->GetPrimaryBeta()*Event->GetPrimaryMomentumDirection()[2] < 0){
+            PassAllCuts = true;
+    		//-----------EVENT LEVEL CUT APPLIED
+        } //End selecton cuts
+
+    } //Single Track cut
+     return PassAllCuts;
+}
+
+//Function that fills the HG tof hands
+void tof_flags(const CEventRec* Event, vector<int>& tof_hg_hits, int Outer_TOF_flag[], int Inner_TOF_flag[],  int Layer_Hits_Tracker[], int TKRflag ){
+    for(uint isig=0; isig<Event->GetTrack(0)->GetEnergyDeposition().size(); isig++){
+        unsigned int VolumeId  = Event->GetTrack(0)->GetVolumeId(isig);
+        if(volspec(VolumeId,0,2) == 20 && Event->GetTrack(0)->GetEnergyDeposition(isig) > TrackerCut){
+            int layer = GGeometryObject::GetTrackerLayer(VolumeId);
+            Layer_Hits_Tracker[layer]++;
+            TKRflag++;
+        }
+        if(volspec(VolumeId,0,2) == 10 && Event->GetTrack(0)->GetEnergyDeposition(isig) > TofCutLow){ Outer_TOF_flag[volspec(VolumeId,2,1)]++; tof_hg_hits.push_back(VolumeId);}
+        if(volspec(VolumeId,0,2) == 11 && Event->GetTrack(0)->GetEnergyDeposition(isig) > TofCutLow){ Inner_TOF_flag[volspec(VolumeId,2,1)]++; tof_hg_hits.push_back(VolumeId);}
+        //cout << "Rec: Hit " << isig << " Edep " << Event->GetTrack(0)->GetEnergyDeposition(isig) << " at " << VolumeId << endl;
+    }
 }
