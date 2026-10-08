@@ -190,17 +190,18 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 
     vector<int> lg_hits = {};
     bool TofTriggerSingleTrack = false;
-    cout << "Event is " << i << endl;
+    //cout << "Event is " << i << endl;
 
     LG_std_event_selection_cuts(Event,lg_hits,TofTriggerSingleTrack);
 
-    cout << "Passed LG hits: " << endl;
+    //cout << "Passed LG hits: " << endl;
+    /*
     for (int element : lg_hits) {
         std::cout << element << " ";
-    }
+        }*/
 
     if(TofTriggerSingleTrack){
-        cout << "This event passes LG cuts! " << i << endl;
+        //cout << "This event passes LG cuts! " << i << endl;
 
         if(std_Rec_event_cuts(Event) &&  fabs(Event->GetPrimaryBeta()) > betacut && fabs(Event->GetPrimaryBeta()) <  betahigh && ( (TRG == 0) || ((int)Event->GetTriggerSources().at(0) == TRG) )){
             //cout << "Event passes the standard cuts! " << endl;
@@ -325,7 +326,7 @@ HBetaProxy->SetMaximum(HBetaProxy->GetEntries());
 
 histplot1f("c1",HBetaProxy,"Proxy Beta","Proxy Beta","NEntries", out_path + "Rec_BetaProxy"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR) + "TF_Factor" + roundstr_d(tf,2) + "TK_Factor" + roundstr_d(tk,2) + end_name );
 histplot1f("c2",HBetaRec,"Reconstructed Beta","Reconstructed Beta","NEntries", out_path + "Rec_BetaRec " + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) + "TF_Factor" + roundstr_d(tf,2) + "TK_Factor" + roundstr_d(tk,2) + end_name );
-histplot2d("c2_5",HRecB_vs_ProxB,"Prox_B versus Rec_B","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR) + "TF_Factor" + roundstr_d(tf,2) + "TK_Factor" + roundstr_d(tk,2) + end_name );
+histplot2d("c2_5",HRecB_vs_ProxB,"Data: Prox_B versus Rec_B","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR) + "TF_Factor" + roundstr_d(tf,2) + "TK_Factor" + roundstr_d(tk,2) + end_name );
 
 
 HBetaRec->SaveAs((out_path + "HRecData.root").c_str());

@@ -16,8 +16,8 @@ GOptionParser* parser = GOptionParser::GetInstance();
 parser->AddProgramDescription("Minimal Reproducable Example for Extracing Data from Reco Data");
 parser->AddCommandLineOption<string>("in_path", "path to instrument data files", "./*", "i");
 parser->AddCommandLineOption<string>("out_file", "name of output root file", "", "o");
-parser->AddCommandLineOption<double>("beta_low", "low Beta Cut",0.8,"l");
-parser->AddCommandLineOption<double>("beta_high", "upper Beta Cut",1,"u");
+parser->AddCommandLineOption<double>("beta_low", "low Beta Cut",0.2,"l");
+parser->AddCommandLineOption<double>("beta_high", "upper Beta Cut",1.0,"u");
 parser->AddCommandLineOption<double>("tkr_factor", "tkr factor",1,"k");
 parser->AddCommandLineOption<double>("tof_factor", "tof factor",1,"f");
 parser->AddCommandLineOption<bool>("TKR", "tkr use",1,"s");
@@ -126,11 +126,14 @@ TH1D * HTofMult = Plotting.DefineTH1D("HTofMult",200, 0.1, 2, "Multiplicative Fa
 TH1D * HTkrMult = Plotting.DefineTH1D("HTkrMult",200, 0.1, 2, "Multiplicative Factor TKR", "entries", 0.5, 1e4);
 
 //TH2D * HGenB_vs_GenZ = new TH2D("HGenB_vs_GenZ","Gen_Beta * Gen_Z vs Gen_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.5*betacut -0.1 , 1.5*betahigh*2 + 0.1 );
-TH2D * HRecB_vs_CalcZ = new TH2D("HRecB_vs_CalcZ","Calculated Z vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 3);
-//TH2D * HTrunM_vs_RecB= new TH2D("HTrunM_vs_RecB","Tr_Mean vs Rec_Beta",50, betacut - 0.1, betahigh + 0.1,50,  0.5 , 3.5);
+TH2D * HRecB_vs_CalcZ = new TH2D("HRecB_vs_CalcZ","Calculated Z vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 4);
 
-TH2D * HRecB_vs_TrM_TOF = new TH2D("HRecB_vs_TrM_TOF","sqrt(TrM_TOF) Z vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 3);
-TH2D * HRecB_vs_TrM_TKR = new TH2D("HRecB_vs_TrM_TKR","sqrt(TrM_TKR) Z vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 3);
+TH2D * HRecB_vs_TrM_TOF = new TH2D("HRecB_vs_TrM_TOF","sqrt(TrM_TOF) Z vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 4);
+TH2D * HRecB_vs_TrM_TKR = new TH2D("HRecB_vs_TrM_TKR","sqrt(TrM_TKR) Z vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 4);
+
+TH2D * HRecB_vs_dedx_TOF = new TH2D("HRecB_vs_dedx_TOF","dE/dx Z vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 20);
+TH2D * HRecB_vs_dedx_TKR = new TH2D("HRecB_vs_dedx_TKR","dE/dx Z vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.1 , 20);
+
 
 
 //TH2D * HRecB_vs_Cal = new TH2D("HRecB_vs_RecBTrunM","Rec_Beta * Tr_Mean vs Rec_Beta",50,betacut - 0.1, betahigh + 0.1, 50, 0.5*betacut -0.1 , 1.5*betahigh*2 + 0.1 );
@@ -151,7 +154,7 @@ TreeRec->GetEntry(0);
 cout << "Total Number of events / Mainscale Factor = " << TreeRec->GetEntries()/MainLoopScaleFactor << endl;
 
 //Using i to loop over every event in the tree
-//for(unsigned int i = 0; i < 1000; i+=MainLoopScaleFactor){
+//for(unsigned int i = 0; i < 10; i+=MainLoopScaleFactor){
 for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
     TreeRec->GetEntry(i);
 
@@ -175,7 +178,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
             vector<int> tof_hg_hits = {};
             tof_flags(Event, tof_hg_hits, Outer_TOF_flag, Inner_TOF_flag, Layer_Hits_Tracker, TKRflag );
 
-            if( (Outer_TOF_flag[0] > 0 && Inner_TOF_flag[0] > 0)  && Inner_TOF_flag[1] > 0 && !Inner_TOF_flag[2] > 0 && !Inner_TOF_flag[3] > 0 && !Inner_TOF_flag[4] > 0 && !Inner_TOF_flag[5] > 0 && !Inner_TOF_flag[6] > 0 && !Outer_TOF_flag[2] > 0 && !Outer_TOF_flag[3] > 0 && !Outer_TOF_flag[4] > 0 && !Outer_TOF_flag[5] > 0 && !Inner_TOF_flag[6] > 0 ){ //If UMB and CBE top and CBE bot and NOTHING ELSE
+            if( std::is_permutation(lg_hits.begin(), lg_hits.end(), tof_hg_hits.begin(), tof_hg_hits.end())  ){ //If UMB and CBE top and CBE bot and NOTHING ELSE
 
                 vector<double> Zevent;
                 vector<double> Tr_Mean_TOF;
@@ -248,6 +251,20 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
                 double TrM_TOF = 0;
                 double CtrTrM_TOF = 0;
 
+
+                //dE/dx
+                //cout << "Event is " << i << " beta is " << Event->GetPrimaryBeta() << " dedx TOF " << endl;
+                for(unsigned int isig = 0; isig < double(Tr_Mean_TOF.size()); isig++){
+                    //cout << "Hit " << isig << " energy deposition is " << pow(Tr_Mean_TOF.at(isig),2) << endl;
+                    HRecB_vs_dedx_TOF->Fill(Event->GetPrimaryBeta(),(pow(Tr_Mean_TOF.at(isig),2)/Ltof));
+                }
+
+                for(unsigned int isig = 0; isig < double(Tr_Mean_TKR.size()); isig++){
+                    //cout << "Hit " << isig << " energy deposition is " << pow(Tr_Mean_TOF.at(isig),2) << endl;
+                    HRecB_vs_dedx_TKR->Fill(Event->GetPrimaryBeta(),(pow(Tr_Mean_TKR.at(isig),2)/Ltkr));
+                }
+
+                //Calculated truncated mean
                 if(Tr_Mean_TOF.size() < NHitsmin){
                     TrM_TOF = 0;
                 }else{
@@ -303,8 +320,10 @@ histplot1d("c1", HChargeMip, (name + ": Charge Distribution Rec Beta " + roundst
 histplot2d("c2", HRecB_vs_CalcZ, "Z_calc versus Rec_B","Reconstructed Beta","Z_calc","NEntries", out_path + name + "Rec2D_Zedep3");
 histplot1d("c5", hedep, "Tracker Energy Deposition for "+to_string(betacut)+" - "+to_string(betahigh),"Angle Corrected Energy Deposition","NEvents", out_path + name + "Hedep_Zedep3");
 
-histplot2d("c5", HRecB_vs_TrM_TOF, "Sqrt(TrM_TOF) versus Rec_B","Reconstructed Beta","Sqrt(TrM_TOF)","NEntries", out_path + "BothRecBrecTrM_TOF2D");
-histplot2d("c7", HRecB_vs_TrM_TKR, "Sqrt(TrM_TKR) versus Rec_B","Reconstructed Beta","Sqrt(TrM_TKR)","NEntries", out_path + "BothRecBrecTrM_TKR2D");
+histplot2d("c6", HRecB_vs_TrM_TOF, "Data TOF: Sqrt(TrM_TOF) versus Rec_B","Reconstructed Beta","Sqrt(TrM_TOF)","NEntries", out_path + "BothRecBrecTrM_TOF2D");
+histplot2d("c7", HRecB_vs_TrM_TKR, "Data TKR: Sqrt(TrM_TKR) versus Rec_B","Reconstructed Beta","Sqrt(TrM_TKR)","NEntries", out_path + "BothRecBrecTrM_TKR2D");
+histplot2d("c7", HRecB_vs_dedx_TOF, "Data TOF: dE/dx versus Rec_B","Reconstructed Beta","dE/dx [MeV/cm]","NEntries", out_path + "BothRecBrecdedx_TOF2D");
+histplot2d("c8", HRecB_vs_dedx_TKR, "Data TKR: dE/dx versus Rec_B","Reconstructed Beta","dE/dx [MeV/cm]","NEntries", out_path + "BothRecBrecdedx_TKR2D");
 
 
 cout << "Hedep Max Bin Center = " << hedep->GetBinCenter(hedep->GetMaximumBin()) << endl;

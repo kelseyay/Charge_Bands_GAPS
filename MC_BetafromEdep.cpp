@@ -64,7 +64,7 @@ GOptionParser* parser = GOptionParser::GetInstance();
 parser->AddProgramDescription("Minimal Reproducable Example for Extracing Data from Reco Data");
 parser->AddCommandLineOption<string>("in_path", "path to instrument data files", "./*", "i");
 parser->AddCommandLineOption<string>("out_file", "name of output root file", "", "o");
-parser->AddCommandLineOption<double>("beta_low", "low Beta Cut",0.8,"l");
+parser->AddCommandLineOption<double>("beta_low", "low Beta Cut",0.2,"l");
 parser->AddCommandLineOption<double>("beta_high", "upper Beta Cut",1,"u");
 parser->AddCommandLineOption<double>("tkr_factor", "tkr factor",1,"k");
 parser->AddCommandLineOption<double>("tof_factor", "tof factor",1,"f");
@@ -381,20 +381,20 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 
 }  //Closed bracket for iteration through tree events, move on to the next event i
 
-histplot2d("c1",HRecB_vs_GenB,"Rec_B versus Gen_B","Generated Beta", "Reconstructed Beta","NEntries", out_path + "GenBRec" + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) );
-histplot2d("c2",HProxB_vs_GenB,"Prox_B versus Gen_B","Generated Beta", "Proxy Beta","NEntries", out_path + "GenBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
-histplot2d("c2_5",HRecB_vs_ProxB,"Prox_B versus Rec_B","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot2d("c1",HRecB_vs_GenB,"MC: Rec_B versus Gen_B","Generated Beta", "Reconstructed Beta","NEntries", out_path + "GenBRec" + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) );
+histplot2d("c2",HProxB_vs_GenB,"MC: Prox_B versus Gen_B","Generated Beta", "Proxy Beta","NEntries", out_path + "GenBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot2d("c2_5",HRecB_vs_ProxB,"MC: Prox_B versus Rec_B","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
 
-histplot2d("c1_w",HRecB_vs_GenB_Weight,"Rec_B versus Gen_B Weighted","Generated Beta", "Reconstructed Beta","NEntries", out_path + "Weighted_GenBRec" + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) );
-histplot2d("c2_w",HProxB_vs_GenB_Weight,"Prox_B versus Gen_B Weighted","Generated Beta", "Proxy Beta","NEntries", out_path + "Weighted_GenBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
-histplot2d("c2_5_w",HRecB_vs_ProxB_Weight,"Prox_B versus Rec_B Weighted","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "Weighted_RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot2d("c1_w",HRecB_vs_GenB_Weight,"MC: Rec_B versus Gen_B Weighted","Generated Beta", "Reconstructed Beta","NEntries", out_path + "Weighted_GenBRec" + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2) + "TOF" + to_string(TF) + "TKR" + to_string(TKR) );
+histplot2d("c2_w",HProxB_vs_GenB_Weight,"MC: Prox_B versus Gen_B Weighted","Generated Beta", "Proxy Beta","NEntries", out_path + "Weighted_GenBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot2d("c2_5_w",HRecB_vs_ProxB_Weight,"MC: Prox_B versus Rec_B Weighted","Reconstructed Beta", "Proxy Beta","NEntries", out_path + "Weighted_RecBProxB" + "B" +  roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
 
 HBetaRec->SetMaximum(HBetaRec->GetEntries());
 HBetaGen->SetMaximum(HBetaGen->GetEntries());
 HBetaProxy->SetMaximum(HBetaProxy->GetEntries());
-histplot1d("c3",HBetaProxy,"Proxy Beta","Proxy Beta","NEntries", out_path + "BetaProxy"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
-histplot1d("c4",HBetaGen,"Generated Beta","Generated Beta","NEntries", out_path + "BetaGen"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
-histplot1d("c5",HBetaRec,"Reconstructed Beta","Reconstructed Beta","NEntries", out_path + "BetaRec " + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot1d("c3",HBetaProxy,"MC: Proxy Beta","Proxy Beta","NEntries", out_path + "BetaProxy"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot1d("c4",HBetaGen,"MC: Generated Beta","Generated Beta","NEntries", out_path + "BetaGen"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot1d("c5",HBetaRec,"MC: Reconstructed Beta","Reconstructed Beta","NEntries", out_path + "BetaRec " + "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
 
 //HBetaProxy_Weight->Scale( 1./HBetaProxy_Weight->Integral(),"WIDTH");
 HBetaProxy_Weight->SetMinimum(1);
@@ -409,10 +409,10 @@ HBetaRec_Weight->SetMinimum(1);
 HBetaGen_Weight_noTOFcuts->SetMaximum(bcounts_Weight*100);
 HBetaGen_Weight_noTOFcuts->SetMinimum(1);
 
-histplot1f("c6",HBetaGen_Weight,"Generated Beta Weighted","Generated Beta Weighted","NEntries", out_path + "Weighted_BetaGen"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
-histplot1f("c7",HBetaProxy_Weight,"Proxy Beta Weighted","Proxy Beta Weighted","NEntries", out_path + "Weighted_BetaProx"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
-histplot1f("c8",HBetaRec_Weight,"Reconstructed Beta Weighted","Reconstructed Beta Weighted","NEntries", out_path + "Weighted_BetaRec"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
-histplot1f("c9",HBetaGen_Weight_noTOFcuts,"Generated Beta Weighted (No TOF Cuts)","Generated Beta Weighted","NEntries", out_path + "Weighted_BetaGen_NoTOFCuts"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot1f("c6",HBetaGen_Weight,"MC: enerated Beta Weighted","Generated Beta Weighted","NEntries", out_path + "Weighted_BetaGen"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot1f("c7",HBetaProxy_Weight,"MC: Proxy Beta Weighted","Proxy Beta Weighted","NEntries", out_path + "Weighted_BetaProx"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot1f("c8",HBetaRec_Weight,"MC: Reconstructed Beta Weighted","Reconstructed Beta Weighted","NEntries", out_path + "Weighted_BetaRec"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
+histplot1f("c9",HBetaGen_Weight_noTOFcuts,"MC: Generated Beta Weighted (No TOF Cuts)","Generated Beta Weighted","NEntries", out_path + "Weighted_BetaGen_NoTOFCuts"+ "B" + roundstr_d(betacut,2) + "-" + roundstr_d(betahigh,2)+ "TOF" + to_string(TF) + "TKR" + to_string(TKR)  );
 
 
 HBetaGen_Weight->SaveAs((out_path + "HGenWeight.root").c_str());

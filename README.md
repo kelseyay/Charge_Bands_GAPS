@@ -1,5 +1,7 @@
 This repository is specifically for all things charge discrimination related for GAPS
 
+git clone https://github.com/kelseyay/Charge_Bands_GAPS
+
 Make a build directory within the directory. The .gitignore file will ignore the build directory. 
 
 cmake ..
