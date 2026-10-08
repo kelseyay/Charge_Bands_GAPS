@@ -50,3 +50,7 @@ target_link_libraries(DZedep3 ${LIB_DIRS})
 add_executable(SlimTrim SlimTrimSkimAttempt.cpp)
 target_include_directories(SlimTrim PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
 target_link_libraries(SlimTrim ${LIB_DIRS})
+
+add_executable(MCSlimTrim MCSlimTrimSkimAttempt.cpp)
+target_include_directories(MCSlimTrim PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(MCSlimTrim ${LIB_DIRS})
