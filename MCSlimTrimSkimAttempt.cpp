@@ -29,12 +29,19 @@ bool is_selected(const CEventRec* Event){
         int TKRflag = 0;
         int Layer_Hits_Tracker[7] = {}; //Seven layers
         vector<int> tof_hg_hits = {};
+        bool TofHGSingleTrack = false;
 
-        tof_flags(Event, tof_hg_hits, Outer_TOF_flag, Inner_TOF_flag, Layer_Hits_Tracker, TKRflag );
+        HG_std_event_selection_cuts(Event, tof_hg_hits, TofHGSingleTrack);
 
-        if( (Outer_TOF_flag[0] > 0 && Inner_TOF_flag[0] > 0)  && Inner_TOF_flag[1] > 0 && !Inner_TOF_flag[2] > 0 && !Inner_TOF_flag[3] > 0 && !Inner_TOF_flag[4] > 0 && !Inner_TOF_flag[5] > 0 && !Inner_TOF_flag[6] > 0 && !Outer_TOF_flag[2] > 0 && !Outer_TOF_flag[3] > 0 && !Outer_TOF_flag[4] > 0 && !Outer_TOF_flag[5] > 0 && !Outer_TOF_flag[6] > 0){ //If UMB and CBE top and CBE bot and NOTHING ELSE
-            Selected_Slim = true;
-        }
+        if(TofHGSingleTrack){
+
+            tof_flags(Event, tof_hg_hits, Outer_TOF_flag, Inner_TOF_flag, Layer_Hits_Tracker, TKRflag );
+
+            if( (Outer_TOF_flag[0] > 0 && Inner_TOF_flag[0] > 0)  && Inner_TOF_flag[1] > 0 && !Inner_TOF_flag[2] > 0 && !Inner_TOF_flag[3] > 0 && !Inner_TOF_flag[4] > 0 && !Inner_TOF_flag[5] > 0 && !Inner_TOF_flag[6] > 0 && !Outer_TOF_flag[2] > 0 && !Outer_TOF_flag[3] > 0 && !Outer_TOF_flag[4] > 0 && !Outer_TOF_flag[5] > 0 && !Outer_TOF_flag[6] > 0){ //If UMB and CBE top and CBE bot and NOTHING ELSE
+                Selected_Slim = true;
+            }
+
+        } //Closed brackets for HG single track
 
     } // Closed bracket standard event selection cuts
 
@@ -144,7 +151,7 @@ if(SAVE){
     geo_tree->Write("GGeometry"); //This does work!
     //Copy_GRecoTree->Write();
     Copy_RecTree->Write();
-    //Copy_MCTree->Write();
+    Copy_MCTree->Write();
     f->Close();
 }
 
