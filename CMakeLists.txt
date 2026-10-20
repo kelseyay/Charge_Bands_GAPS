@@ -54,3 +54,11 @@ target_link_libraries(SlimTrim ${LIB_DIRS})
 add_executable(MCSlimTrim MCSlimTrimSkimAttempt.cpp)
 target_include_directories(MCSlimTrim PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
 target_link_libraries(MCSlimTrim ${LIB_DIRS})
+
+add_executable(TimeRes MC_Beta_TimingRes.cpp)
+target_include_directories(TimeRes PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(TimeRes ${LIB_DIRS})
+
+add_executable(BinZvars MC_Charge_vars_BBinned.cpp)
+target_include_directories(BinZvars PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(BinZvars ${LIB_DIRS})
