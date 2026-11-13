@@ -1,4 +1,5 @@
-//Use this code to pare down an entire large dataset to a small, small dataset!!
+//Use this code to pare down an entire large dataset to a small, small dataset!
+// ./MCSlimTrim -i /data1/nextcloud/cra_data/nobackup/MC/v3.0.0/full/alpha/alpha_gaps_triggerlevel1_FTFP_BERT_1761 -n MC_alpha_TL1.root
 
 using namespace std;
 

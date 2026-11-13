@@ -4,7 +4,7 @@
 //WORK IN PROGRESS!!
 
 // How to use:
-//
+// ./BinZvars -i /home/kelsey/simulations/simdat/proton/v3.0.0/slimmed_TL1/MC_alpha_TL1 -o Alpha_v300_TL1/More_Test/ -u 1.2
 
 
 using namespace std;
@@ -195,7 +195,7 @@ const float Bedges[] = {0.5, 0.61, 0.73, 0.9, 1.1}; //Edges of the histogram
 
 for(int i = 0; i < NBbins; i++){
     HBetaProxy[i] = new TH1F (Form("HBetaProxy%i",i),Form("HBetaProxy %f",Bedges[i]),70, 0.1,1.2);
-    HTOF_Prim[i] = new TH1F (Form("HTOF_Prim%i",i),Form("HTOF_Prim %f",Bedges[i]),80, 1,30);
+    HTOF_Prim[i] = new TH1F (Form("HTOF_Prim%i",i),Form("HTOF_Prim %f",Bedges[i]),80, 0,30);
     HTKR_TrM[i] = new TH1F (Form("HTKR_TrM%i",i),Form("HTKR_TrM %f",Bedges[i]), 70, 0.5,4);
 }
 
@@ -280,6 +280,13 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 				vector<double> TOF_prim; //Want a vector for the TOF_prim variable
 			    vector<double> Beta_Proxy;
                 vector<double> Tr_Mean_TKR;
+
+                vector<double> Combine_Edeps;
+                vector<int> Combine_layer;
+                vector<int> Combine_mod;
+                vector<int> Combine_detector;
+                vector<int> Combine_strip;
+
                 double Brec = Event->GetPrimaryBeta();
 
 				//cout << "Event is " << i << endl;
@@ -334,11 +341,44 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
 					if(TKR && volspec(VolumeId,0,2) == 20 && Event->GetTrack(0)->GetEnergyDeposition(isig) > TrackerCut){
 						int layer = GGeometryObject::GetTrackerLayer(VolumeId);
 						int sdstrip = GGeometryObject::GetDetectorStrip(VolumeId);
+						int sdmod = GGeometryObject::GetLayerModule(VolumeId);
+						int sddet = GGeometryObject::GetModuleDetector(VolumeId);
+						Ang_Edep = Edep*fabs(Event->GetPrimaryMomentumDirection().CosTheta());
 
-						Tr_Mean_TKR.push_back(sqrt(Edep*fabs(Event->GetPrimaryMomentumDirection().CosTheta())));
+						if(Layer_Hits_Tracker[layer] == 1){
+						    if(Ang_Edep > solvermin_tkr){
+						        double root = Z1_tkr_Solve->GetX(Ang_Edep);
+						        Beta_Proxy.push_back(root);
+							}
+							Tr_Mean_TKR.push_back(sqrt(Ang_Edep));
+						}
 
+						if(Layer_Hits_Tracker[layer] == 2){
+						    //cout << "Event " << i << " has a double hit in the tracker! lmds = " << layer << sdmod << sddet << sdstrip << endl;
+							bool new_com = 1; //If the combined hit is not found in the vecors, then it must be added. Assume it is new unless it's found!
+							for(int com = 0; com < Combine_Edeps.size();com++){ //Check the vectors that track if hits are combined
+							    if(layer == Combine_layer.at(com) && sdmod == Combine_mod.at(com) && sddet == Combine_detector.at(com) ){
+									//cout << "Hewwo, I am probably the friend of that hit!" << endl;
+									//cout << "With our powers combined " << Combine_Edeps.at(com) << " + " << Ang_Edep << endl;
+									Tr_Mean_TKR.push_back(sqrt(Ang_Edep + Combine_Edeps.at(com)));
+					                if(Ang_Edep + Combine_Edeps.at(com) > solvermin_tkr){
+					                    double root = Z1_tkr_Solve->GetX(Ang_Edep + Combine_Edeps.at(com) );
+					                    Beta_Proxy.push_back(root);
+									}
+								}
+							}
+							if(new_com){
+							    Combine_Edeps.push_back(Ang_Edep);
+								Combine_layer.push_back(layer);
+								Combine_mod.push_back(sdmod);
+								Combine_detector.push_back(sddet);
+								Combine_strip.push_back(sdstrip);
+							}
+
+ 						}
+
+						/*
 				        if(sdstrip != 0 && sdstrip != 7 && Layer_Hits_Tracker[layer] < 2){
-			                Ang_Edep = Edep*fabs(Event->GetPrimaryMomentumDirection().CosTheta());
 							if(Ang_Edep > solvermin_tkr){
 							    double root = Z1_tkr_Solve->GetX(Ang_Edep);
 								if(print)cout << "Hit is " << isig << endl;
@@ -346,7 +386,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
                                 if(print)cout << "Calculated Beta at Volid = "  << root << endl;
                                 Beta_Proxy.push_back(root);
 							}
-						}
+						}*/
 				    }
 				} //Closed bracket for iteration over isig with TOF cuts
 
@@ -355,7 +395,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
                 if(TOF_prim.size() < 2){
                     TOF_prim_Ave = 0;
                 }else{
-                    for(unsigned int isig = 0; isig < double(TOF_prim.size())/2; isig++){
+                    for(unsigned int isig = 0; isig < double(TOF_prim.size()); isig++){
               		TOF_prim_Ave += TOF_prim.at(isig);
               		CtrTOF_prim_Ave++;
                	}
@@ -438,9 +478,9 @@ for(int i = 0; i < NBbins; i++){
     histplot1f(Form("HTKR_TrM%i",i), HTKR_TrM[i], "TKR TrM " + roundstr_d(Bedges[i],2) + "-" + roundstr_d(Bedges[i+1],2), "TrM", "Nentries", out_path + "Bedge_TKR_TrM"+ roundstr_d(Bedges[i],2) + "-" + roundstr_d(Bedges[i+1],2)+ end_name);
     histplot1f(Form("HTOF_PrimM%i",i), HTOF_Prim[i], "TOF Primary " + roundstr_d(Bedges[i],2) + "-" + roundstr_d(Bedges[i+1],2), "TOF Primary dE/dx", "Nentries", out_path + "Bedge_TOF_prim"+ roundstr_d(Bedges[i],2) + "-" + roundstr_d(Bedges[i+1],2)+ end_name);
     histplot1f(Form("HBeta_ProxM%i",i), HBetaProxy[i], "Beta Proxy " + roundstr_d(Bedges[i],2) + "-" + roundstr_d(Bedges[i+1],2), "Bprox", "Nentries", out_path + "Bedge_Bprox"+ roundstr_d(Bedges[i],2) + "-" + roundstr_d(Bedges[i+1],2)+ end_name);
-    HTKR_TrM[i]->SaveAs((out_path + to_string(i) + endname + "HTKR_TrM.root").c_str());
-    HTOF_Prim[i]->SaveAs((out_path + to_string(i) + endname + "HTOF_Prim.root").c_str());
-    HBetaProxy[i]->SaveAs((out_path + to_string(i) + endname + "HBeta_Prox.root").c_str());
+    HTKR_TrM[i]->SaveAs((out_path + to_string(i) + end_name + "HTKR_TrM.root").c_str());
+    HTOF_Prim[i]->SaveAs((out_path + to_string(i) + end_name + "HTOF_Prim.root").c_str());
+    HBetaProxy[i]->SaveAs((out_path + to_string(i) + end_name + "HBeta_Prox.root").c_str());
 }
 
 myfile.open(out_path + txtname,std::ios::app);

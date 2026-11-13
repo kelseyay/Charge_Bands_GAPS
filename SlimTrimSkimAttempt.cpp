@@ -1,4 +1,5 @@
 //Use this code to pare down an entire large dataset to a small, small dataset!!
+// ./SlimTrim -i /data1/nextcloud/cra_data/data/2025/production/v26.08/reconstructed/flight/251222/merged251222_23 -n sts_251222_2300-2400.root
 
 using namespace std;
 
@@ -25,8 +26,9 @@ bool is_selected(const CEventRec* Event){
     if(TofTriggerSingleTrack){
         //cout << "Event ID is " << Event->GetEventNumber() << endl;
         //cout << "This event passes LG cuts! " << endl;
+        //cout << "TOF single track! " << endl;
 
-        if(std_Rec_event_cuts(Event) &&  fabs(Event->GetPrimaryBeta()) > 0.2 && fabs(Event->GetPrimaryBeta()) <  1.2 && (((int)Event->GetTriggerSources().at(0) == 2) )){
+        if(std_Rec_event_cuts(Event) &&  fabs(Event->GetPrimaryBeta()) > 0.2 && fabs(Event->GetPrimaryBeta()) <  1.8 && (((int)Event->GetTriggerSources().at(0) == 2) )){
             //cout << "Event passes the standard cuts! " << endl;
 
             int Outer_TOF_flag[7] = {}; //TOF top = 0, bot = 1, +X = 2, -X = 3, +Y = 4, -Y = 5. 1 or 3 PPs is 6
@@ -146,6 +148,7 @@ for(uint i=0; i<TreeRec->GetEntries(); i++){
             cout << "Event Number? " << Event->GetEventNumber() << endl;
             cout << "Saved Event Number = " << ev_track << endl;
             ev_track++;*/
+            //cout << "Event is " << i << "pass! " << endl;
 
             if(SAVE){
                 Copy_RecTree->Fill();

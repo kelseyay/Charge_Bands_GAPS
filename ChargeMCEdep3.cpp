@@ -336,7 +336,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
                         if(volspec(VolumeId,2,1) == 0 || volspec(VolumeId,2,1) == 1){ //It's a flat paddle
                             //This isn't actually the truncated mean. It's the energy deposition, the truncating happens in the Zevent phase
                             double Ang_Edep = Gtofnew*Event->GetTrack(0)->GetEnergyDeposition(isig)*fabs(Event->GetPrimaryMomentumDirection().CosTheta()) ;
-                            Zevent.push_back( sqrt( (ion/eps_noz)*exp( boost::math::lambert_w0( (Ang_Edep/ion)*exp(const_terms) ) - const_terms  ) ) );
+                            if(Brec < 1.0) Zevent.push_back( sqrt( (ion/eps_noz)*exp( boost::math::lambert_w0( (Ang_Edep/ion)*exp(const_terms) ) - const_terms  ) ) );
                             Tr_Mean_TOF.push_back(sqrt(Ang_Edep));
                         } else{ //It's a vertical paddle
                             double Ang_Edep = Gtofnew*Event->GetTrack(0)->GetEnergyDeposition(isig)*fabs( sqrt(1-pow(Event->GetPrimaryMomentumDirection().CosTheta(),2)) ) ;
@@ -363,7 +363,7 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
                         double eps_noz = 0.15355*(Ztkr/Atkr)*(rtkr*Ltkr)*(1/pow(Brec,2));
                         double const_terms = 0.2 - pow(Brec,2) + log( 1.022*pow(Brec,2)/( ion*(1 - pow(Brec,2))) )  ;
                         double Ang_Edep = Gtkrnew*Event->GetTrack(0)->GetEnergyDeposition(isig)*fabs(Event->GetPrimaryMomentumDirection().CosTheta()) ;
-                        Zevent.push_back( sqrt( (ion/eps_noz)*exp( boost::math::lambert_w0( (Ang_Edep/ion)*exp(const_terms) ) - const_terms  ) ) );
+                        if(Brec < 1.0) Zevent.push_back( sqrt( (ion/eps_noz)*exp( boost::math::lambert_w0( (Ang_Edep/ion)*exp(const_terms) ) - const_terms  ) ) );
                         Tr_Mean_TKR.push_back(sqrt(Ang_Edep));
                         //cout << "z from MPV form Tr Mean = " << sqrt( (ion/eps_noz)*exp( boost::math::lambert_w0( (Ang_Edep/ion)*exp(const_terms) ) - const_terms  ) ) << endl;
 
@@ -395,6 +395,12 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
            	if(CtrTrM_TOF == 0){ TrM_TOF = 0;
            	}else{ TrM_TOF /= CtrTrM_TOF;}
             }
+            /*if(TrM_TOF < 2){ cout << "Event " << i << " TOF hits look like Z = 1 particle! " << endl;
+                for(uint isig=0; isig<Event->GetTrack(0)->GetEnergyDeposition().size(); isig++){
+                    unsigned int VolumeId  = Event->GetTrack(0)->GetVolumeId(isig); //Check the VolumeId of the event
+                    if(GGeometryObject::IsTofVolume(VolumeId))cout << "Hit " << isig << " at  " << VolumeId << " is " << Event->GetTrack(0)->GetEnergyDeposition(isig)*fabs(Event->GetPrimaryMomentumDirection().CosTheta()) << endl;
+                }
+            }*/
             HRecB_vs_TrM_TOF->Fill(Event->GetPrimaryBeta(),TrM_TOF);
 
             std::sort(Tr_Mean_TKR.begin(), Tr_Mean_TKR.begin()+Tr_Mean_TKR.size());
@@ -410,6 +416,13 @@ for(unsigned int i = 0; i < TreeRec->GetEntries(); i+=MainLoopScaleFactor){
            	if(CtrTrM_TKR == 0){ TrM_TKR = 0;
            	}else{ TrM_TKR /= CtrTrM_TKR;}
             }
+            /*if(TrM_TKR > 0 && TrM_TKR < 1.5){ cout << "Event " << i << " TKR hits look like Z = 1 particle! " << endl;
+                for(uint isig=0; isig<Event->GetTrack(0)->GetEnergyDeposition().size(); isig++){
+                    unsigned int VolumeId  = Event->GetTrack(0)->GetVolumeId(isig); //Check the VolumeId of the event
+                    if(GGeometryObject::IsTrackerVolume(VolumeId))cout << "Hit " << isig << " at  " << VolumeId << " is " << Event->GetTrack(0)->GetEnergyDeposition(isig)*fabs(Event->GetPrimaryMomentumDirection().CosTheta()) << endl;
+                }
+                }*/
+
             HRecB_vs_TrM_TKR->Fill(Event->GetPrimaryBeta(),TrM_TKR);
 
 

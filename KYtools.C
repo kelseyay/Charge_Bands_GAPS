@@ -473,7 +473,7 @@ void tof_flags(const CEventRec* Event, vector<int>& tof_hg_hits, int Outer_TOF_f
     }
 }
 
-//Function for the LG standard event cuts that Kaliroe uses
+//Function for the LG standard event cuts that Kaliroe uses, note we are using ALL the HG hits in the Event series here.
 void HG_std_event_selection_cuts(const CEventRec* Event, vector<int>& hg_hits, bool& TofHGSingleTrack){
     hg_hits = {};
     TofHGSingleTrack = false;

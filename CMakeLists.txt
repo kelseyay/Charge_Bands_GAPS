@@ -35,6 +35,10 @@ add_executable(MCEdepBeta MC_BetafromEdep.cpp)
 target_include_directories(MCEdepBeta PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
 target_link_libraries(MCEdepBeta ${LIB_DIRS})
 
+add_executable(MCEdepBeta_NW MC_BetafromEdep_noweight.cpp)
+target_include_directories(MCEdepBeta_NW PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(MCEdepBeta_NW ${LIB_DIRS})
+
 add_executable(RecEdepBeta Rec_BetafromEdep.cpp)
 target_include_directories(RecEdepBeta PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
 target_link_libraries(RecEdepBeta ${LIB_DIRS})
@@ -62,3 +66,11 @@ target_link_libraries(TimeRes ${LIB_DIRS})
 add_executable(BinZvars MC_Charge_vars_BBinned.cpp)
 target_include_directories(BinZvars PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
 target_link_libraries(BinZvars ${LIB_DIRS})
+
+add_executable(DataBinZvars Data_Charge_vars_BBinned.cpp)
+target_include_directories(DataBinZvars PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(DataBinZvars ${LIB_DIRS})
+
+add_executable(GndTres Ground_Data_TimingRes.cpp)
+target_include_directories(GndTres PRIVATE ${GAPS_INCLUDE_DIRS}/gaps)
+target_link_libraries(GndTres ${LIB_DIRS})
